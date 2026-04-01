@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#D4AF37" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Outreach Tracker" />
+  <title>Outreach Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="OT-Logo.png" />
+  <link rel="apple-touch-icon" href="OT-Logo.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Chart.js — no AOS, no opacity animation conflicts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/ScrollTrigger.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── REWARD OVERLAY ─── -->
+  <div id="reward-overlay" class="reward-overlay hidden" role="dialog" aria-modal="true">
+    <canvas id="reward-canvas"></canvas>
+    <div id="reward-screen-glow" class="reward-screen-glow"></div>
+    <div id="reward-content" class="reward-content">
+      <div id="reward-icon" class="reward-icon"></div>
+      <div id="reward-number" class="reward-number"></div>
+      <div id="reward-label" class="reward-label"></div>
+      <div id="reward-sublabel" class="reward-sublabel"></div>
+      <div id="reward-token-slot" class="reward-token-slot hidden">
+        <div class="token-drop-anim"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="token-slot-label">Freeze Token Earned</div>
+      </div>
+    </div>
+    <div class="reward-tap-hint">Tap to dismiss</div>
+  </div>
+
+  <!-- ─── MODAL OVERLAY ─── -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div id="modal-box" class="modal-box"></div>
+  </div>
+
+  <!-- ─── QUICK ADD BOTTOM SHEET ─── -->
+  <div id="quick-add-sheet" class="bottom-sheet hidden" role="dialog" aria-modal="true">
+    <div class="bottom-sheet-backdrop" id="quick-add-backdrop"></div>
+    <div class="bottom-sheet-panel" id="quick-add-panel">
+      <div class="bottom-sheet-handle"></div>
+      <div class="bottom-sheet-header">
+        <span class="bottom-sheet-title"><i class="fa-solid fa-bolt-lightning" style="color:var(--gold-dim)"></i> Quick Add</span>
+        <button class="bottom-sheet-close" id="quick-add-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="bottom-sheet-body" id="quick-add-fields"></div>
+      <div class="bottom-sheet-footer">
+        <button class="form-submit-btn" id="quick-add-submit"><i class="fa-solid fa-bolt-lightning"></i> Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STOP → LOG BOTTOM SHEET ─── -->
+  <div id="stop-log-sheet" class="bottom-sheet hidden" role="dialog" aria-modal="true">
+    <div class="bottom-sheet-backdrop" id="stop-log-backdrop"></div>
+    <div class="bottom-sheet-panel" id="stop-log-panel">
+      <div class="bottom-sheet-handle"></div>
+      <div class="bottom-sheet-header">
+        <span class="bottom-sheet-title"><i class="fa-solid fa-floppy-disk" style="color:var(--gold-dim)"></i> Session Stopped</span>
+      </div>
+      <div class="stop-log-meta" id="stop-log-meta"></div>
+      <div class="stop-log-choices">
+        <button class="stop-log-btn-now" id="stop-log-now">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Log Now</span>
+          <span class="slb-sub">Fill in your numbers</span>
+        </button>
+        <button class="stop-log-btn-later" id="stop-log-later">
+          <i class="fa-regular fa-clock"></i>
+          <span>Log Later</span>
+          <span class="slb-sub">Parks silently</span>
+        </button>
+      </div>
+      <div id="stop-log-form-wrap" class="stop-log-form-wrap hidden"></div>
+    </div>
+  </div>
+
+  <!-- ─── IN-APP NUDGE BANNER ─── -->
+  <div id="nudge-banner" class="nudge-banner hidden">
+    <i class="fa-solid fa-triangle-exclamation nudge-icon"></i>
+    <span id="nudge-text"></span>
+    <button class="nudge-dismiss" id="nudge-dismiss"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <!-- ─── APP SHELL ─── -->
+  <div id="app" class="app-shell">
+
+    <!-- PAGE: HOME -->
+    <section id="page-home" class="page active">
+      <div class="page-scroll">
+        <!-- Header -->
+        <header class="app-header">
+          <div class="header-logo">
+            <img src="OT-Logo.png" alt="OT" class="logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <div class="logo-fallback" style="display:none"><i class="fa-solid fa-bolt-lightning"></i></div>
+          </div>
+          <div class="header-brand">
+            <span class="gold-text app-name">Outreach Tracker</span>
+          </div>
+          <div class="header-date" id="header-date"></div>
+        </header>
+
+        <!-- Streak Hero -->
+        <div class="streak-hero-card" id="streak-hero-card">
+          <div class="streak-ambient-glow"></div>
+          <div class="streak-hero-inner">
+            <div class="streak-icon-wrap">
+              <i class="fa-solid fa-fire streak-flame" id="streak-flame-icon"></i>
+            </div>
+            <div class="streak-number-block">
+              <div class="streak-big-number gold-text" id="streak-number">0</div>
+              <div class="streak-label">DAY STREAK</div>
+            </div>
+            <div class="streak-right-col">
+              <div class="streak-status" id="streak-status-badge"></div>
+              <div class="freeze-token-display" id="freeze-token-display" style="display:none">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span id="freeze-token-count">0</span> token
+              </div>
+            </div>
+          </div>
+          <!-- Freeze action row (only shown when at-risk) -->
+          <div class="streak-use-freeze-row" id="streak-use-freeze-row" style="display:none">
+            <button class="use-freeze-btn" id="use-freeze-btn">
+              <i class="fa-solid fa-shield-halved"></i> Use Freeze Token
+            </button>
+          </div>
+        </div>
+
+        <!-- Countdown -->
+        <div class="countdown-card" id="countdown-card">
+          <div class="countdown-label">Outreach window closes in</div>
+          <div class="countdown-timer" id="countdown-timer">--:--:--</div>
+        </div>
+
+        <!-- Active Session Banner -->
+        <div class="active-session-banner hidden" id="active-session-banner">
+          <div class="active-session-glow"></div>
+          <div class="active-session-info">
+            <i class="fa-solid fa-circle-dot active-pulse-dot"></i>
+            <div>
+              <div class="active-session-label">Session Running</div>
+              <div class="active-session-elapsed" id="active-session-elapsed">00:00:00</div>
+            </div>
+          </div>
+          <button class="stop-session-btn" id="stop-session-btn" aria-label="Stop session">
+            <i class="fa-solid fa-stop"></i> Stop
+          </button>
+        </div>
+
+        <!-- Pending Sessions Warning (soft, non-blocking) -->
+        <div class="pending-warning hidden" id="pending-warning">
+          <i class="fa-solid fa-clock"></i>
+          <span id="pending-warning-text"></span>
+          <a class="pending-warning-link" id="pending-warning-link">Log now →</a>
+        </div>
+
+        <!-- Today Summary -->
+        <div class="section-header">
+          <span class="section-title">Today</span>
+          <span class="section-sub" id="today-progress-label"></span>
+        </div>
+        <div class="today-progress-bar-wrap">
+          <div class="today-progress-bar" id="today-progress-bar" style="width:0%"></div>
+          <span class="today-progress-pct" id="today-progress-pct">0%</span>
+        </div>
+        <div class="today-summary-grid">
+          <div class="summary-cell">
+            <div class="summary-val" id="today-outreaches">—</div>
+            <div class="summary-lbl">Outreaches</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-val" id="today-time">—</div>
+            <div class="summary-lbl">Session Time</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-val" id="today-demos">—</div>
+            <div class="summary-lbl">Demo Reqs</div>
+          </div>
+          <div class="summary-cell">
+            <div class="summary-val" id="today-closes">—</div>
+            <div class="summary-lbl">Closes</div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="section-header" style="margin-top:24px">
+          <span class="section-title">Quick Stats</span>
+        </div>
+        <div class="quick-stats-row" id="quick-stats-row">
+          <div class="quick-stat-card">
+            <div class="qs-val" id="qs-avg">—</div>
+            <div class="qs-lbl">7-Day Avg</div>
+          </div>
+          <div class="quick-stat-card">
+            <div class="qs-val" id="qs-best">—</div>
+            <div class="qs-lbl">Best Day</div>
+            <div class="qs-sub" id="qs-best-date"></div>
+          </div>
+          <div class="quick-stat-card">
+            <div class="qs-val gold-text" id="qs-total">—</div>
+            <div class="qs-lbl">All-Time</div>
+          </div>
+        </div>
+
+        <!-- Start Session -->
+        <div class="start-session-wrap">
+          <button class="start-session-btn" id="start-session-btn">
+            <span class="start-btn-shimmer"></span>
+            <i class="fa-solid fa-play"></i>
+            <span>Start Session</span>
+          </button>
+        </div>
+
+        <div style="height:24px"></div>
+      </div><!-- end page-scroll -->
+    </section>
+
+    <!-- PAGE: LOG -->
+    <section id="page-log" class="page">
+      <div class="page-scroll">
+        <header class="app-header">
+          <div class="header-brand">
+            <span class="gold-text app-name">Session Log</span>
+          </div>
+          <div class="header-date" id="log-header-date"></div>
+        </header>
+
+        <!-- Pending Queue -->
+        <div class="section-header">
+          <span class="section-title">Pending Sessions</span>
+          <span class="section-badge" id="pending-count-badge">0</span>
+        </div>
+        <div id="pending-sessions-list" class="pending-sessions-list">
+          <div class="empty-state" id="pending-empty">
+            <i class="fa-regular fa-clock"></i>
+            <p>No pending sessions. Start a session to log data.</p>
+          </div>
+        </div>
+
+        <!-- Session History -->
+        <div class="section-header" style="margin-top:24px">
+          <span class="section-title">Session History</span>
+        </div>
+        <div id="session-history-list" class="session-history-list">
+          <div class="empty-state" id="history-empty">
+            <i class="fa-solid fa-scroll"></i>
+            <p>No sessions yet. Your history will appear here.</p>
+          </div>
+        </div>
+
+        <div style="height:24px"></div>
+      </div>
+    </section>
+
+    <!-- PAGE: INSIGHTS -->
+    <section id="page-insights" class="page">
+      <div class="page-scroll">
+        <header class="app-header">
+          <div class="header-brand">
+            <span class="gold-text app-name">Insights</span>
+          </div>
+        </header>
+
+        <!-- Period Selector -->
+        <div class="period-selector" id="period-selector" role="tablist">
+          <button class="period-btn active" data-period="7" role="tab">7D</button>
+          <button class="period-btn" data-period="30" role="tab">30D</button>
+          <button class="period-btn" data-period="90" role="tab">90D</button>
+          <button class="period-btn" data-period="all" role="tab">All</button>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon"><i class="fa-solid fa-paper-plane"></i></div>
+            <div class="kpi-val" id="kpi-outreaches">0</div>
+            <div class="kpi-lbl">Total Outreaches</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i class="fa-solid fa-handshake"></i></div>
+            <div class="kpi-val" id="kpi-closes">0</div>
+            <div class="kpi-lbl">Total Closes</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i class="fa-solid fa-eye"></i></div>
+            <div class="kpi-val" id="kpi-demo-rate">0%</div>
+            <div class="kpi-lbl">Demo Request Rate</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-val" id="kpi-close-rate">0%</div>
+            <div class="kpi-lbl">Close Rate</div>
+          </div>
+        </div>
+
+        <!-- Streak & 7-Day Heatmap -->
+        <div class="insight-streak-block">
+          <div class="isb-stat">
+            <div class="isb-big gold-text" id="ins-current-streak">0</div>
+            <div class="isb-lbl">Current Streak</div>
+          </div>
+          <div class="isb-divider"></div>
+          <div class="isb-stat">
+            <div class="isb-big" id="ins-longest-streak">0</div>
+            <div class="isb-lbl">Longest Streak</div>
+          </div>
+          <div class="isb-divider"></div>
+          <div class="isb-heatmap-wrap">
+            <div class="isb-heatmap-row" id="week-heatmap"></div>
+            <div class="isb-heatmap-legend">
+              <span class="leg-swatch leg-hit"></span> Hit target
+              <span class="leg-swatch leg-partial"></span> Some
+              <span class="leg-swatch leg-miss"></span> None
+            </div>
+          </div>
+        </div>
+
+        <!-- Period Summary Card -->
+        <div class="summary-card" id="period-summary-card">
+          <div class="summary-card-header">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Period Summary</span>
+          </div>
+          <div class="summary-card-text" id="weekly-summary-text">Loading...</div>
+          <button class="summary-copy-btn" id="summary-copy-btn" title="Copy summary">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-section" id="chart-section-volume">
+          <div class="chart-title">Daily Outreach Volume</div>
+          <div class="chart-wrap"><canvas id="chart-volume"></canvas></div>
+        </div>
+
+        <div class="chart-section" id="chart-section-funnel">
+          <div class="chart-title">Conversion Funnel</div>
+          <div class="chart-wrap chart-wrap-sm"><canvas id="chart-funnel"></canvas></div>
+        </div>
+
+        <div class="chart-section" id="chart-section-outcomes">
+          <div class="chart-title">Outcome Breakdown</div>
+          <div class="chart-wrap"><canvas id="chart-outcomes"></canvas></div>
+        </div>
+
+        <div class="chart-section" id="chart-section-time">
+          <div class="chart-title">Time Spent per Day</div>
+          <div class="chart-wrap"><canvas id="chart-time"></canvas></div>
+        </div>
+
+        <div class="chart-section" id="best-hours-section">
+          <div class="chart-title">Best Performing Hours</div>
+          <div id="best-hours-content"></div>
+        </div>
+
+        <!-- Full Data Table -->
+        <div class="section-header">
+          <span class="section-title">All Sessions</span>
+        </div>
+        <div class="data-table-wrap">
+          <div class="data-table-scroll" id="data-table-scroll">
+            <table class="data-table" id="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Start</th><th>End</th><th>Duration</th>
+                  <th>Out.</th><th>No's</th><th>Demo</th><th>F/U</th>
+                  <th>F/U Resp</th><th>Conv.</th><th>Closes</th><th>Notes</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="data-table-body"></tbody>
+              <tfoot id="data-table-foot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Export/Import -->
+        <div class="export-block">
+          <div class="section-title" style="margin-bottom:16px">Data</div>
+          <div class="export-btn-row">
+            <button class="export-btn" id="export-all-btn">
+              <i class="fa-solid fa-download"></i> Export All
+            </button>
+            <button class="export-btn" id="export-range-btn">
+              <i class="fa-solid fa-calendar-days"></i> Export Range
+            </button>
+          </div>
+          <div class="export-range-inputs hidden" id="export-range-inputs">
+            <div class="form-row-half">
+              <div class="form-group">
+                <label>From</label>
+                <input type="date" id="export-from" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label>To</label>
+                <input type="date" id="export-to" class="form-input" />
+              </div>
+            </div>
+            <button class="export-btn gold-btn" id="export-range-confirm-btn">
+              <i class="fa-solid fa-file-arrow-down"></i> Download Range
+            </button>
+          </div>
+          <div class="import-row">
+            <label class="import-label" for="import-file">
+              <i class="fa-solid fa-upload"></i> Import Data
+              <input type="file" id="import-file" accept=".json" style="display:none" />
+            </label>
+            <button class="danger-btn" id="clear-data-btn">
+              <i class="fa-solid fa-trash-can"></i> Clear All
+            </button>
+          </div>
+        </div>
+
+        <div style="height:24px"></div>
+      </div>
+    </section>
+
+    <!-- PAGE: SETTINGS -->
+    <section id="page-settings" class="page">
+      <div class="page-scroll">
+        <header class="app-header">
+          <div class="header-brand">
+            <span class="gold-text app-name">Settings</span>
+          </div>
+        </header>
+
+        <!-- Goal -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i class="fa-solid fa-bullseye"></i> Outreach Goal</div>
+          <div class="form-group">
+            <label>Daily Outreach Target</label>
+            <div class="number-input-row">
+              <button class="num-adj-btn" id="goal-dec" aria-label="Decrease">−</button>
+              <input type="number" id="daily-target-input" class="form-input num-center" min="1" max="500" value="20" />
+              <button class="num-adj-btn" id="goal-inc" aria-label="Increase">+</button>
+            </div>
+          </div>
+          <button class="form-submit-btn" id="save-goal-btn">Save Goal</button>
+        </div>
+
+        <!-- Streak Settings -->
+        <div class="settings-section">
+          <div class="settings-section-title"><i class="fa-solid fa-fire"></i> Streak</div>
+          <div class="streak-stats-row">
+            <div class="ss-stat">
+              <div class="ss-val gold-text" id="settings-current-streak">0</div>
+              <div class="ss-lbl">Current</div>
+            </div>
+            <div class="ss-stat">
+              <div class="ss-val" id="settings-longest-streak">0</div>
+              <div class="ss-lbl">Longest</div>
+            </div>
+            <div class="ss-stat">
+              <div class="ss-val" id="settings-freeze-tokens" style="color:var(--gold-solid)">0</div>
+              <div class="ss-lbl">Freeze Tokens</div>
+            </div>
+          </div>
+          <button class="danger-btn-outline" id="reset-streak-btn">
+            <i class="fa-solid fa-rotate-left"></i> Reset Streak
+          </button>
+        </div>
+
+        <!-- Notifications replaced with in-app nudge info -->
+        <div class="settings-section" id="notif-section">
+          <div class="settings-section-title"><i class="fa-solid fa-bell"></i> Nudges</div>
+          <div class="notif-info-block">
+            <p>This app uses smart in-app nudges instead of background notifications (which require a server). When you open the app after 6PM with no outreaches logged, you'll see a reminder banner. After 8PM your streak will be flagged as at-risk.</p>
+            <p style="margin-top:10px">Background notifications are not available in this offline-first PWA.</p>
+          </div>
+        </div>
+
+        <!-- Auto-Backup -->
+        <div class="settings-section" id="backup-section">
+          <div class="settings-section-title"><i class="fa-solid fa-floppy-disk"></i> Auto-Backup</div>
+          <div class="notif-info-block" id="backup-status-text">Checking backup status...</div>
+          <button class="form-submit-btn" id="backup-now-btn" style="margin-top:12px">
+            <i class="fa-solid fa-download"></i> Backup Now
+          </button>
+        </div>
+
+        <!-- About -->
+        <div class="settings-section about-section">
+          <div class="about-logo-wrap">
+            <img src="OT-Logo.png" alt="OT" class="about-logo" onerror="this.style.display='none'" />
+          </div>
+          <div class="about-appname gold-text">Outreach Tracker</div>
+          <div class="about-desc">Your daily cold outreach command center. Track sessions, gamify consistency, and close more clients.</div>
+          <div class="about-version" id="about-version">v2.0 — Built by Adekani</div>
+        </div>
+
+        <div style="height:24px"></div>
+      </div>
+    </section>
+
+  </div><!-- end app-shell -->
+
+  <!-- ─── FLOATING QUICK ADD BUTTON ─── -->
+  <button class="fab-quick-add" id="fab-quick-add" aria-label="Quick add outreach">
+    <i class="fa-solid fa-plus"></i>
+  </button>
+
+  <!-- ─── BOTTOM NAV ─── -->
+  <nav class="bottom-nav" id="bottom-nav" role="navigation" aria-label="Main navigation">
+    <button class="nav-btn active" data-page="home" aria-label="Home">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" data-page="log" aria-label="Log">
+      <i class="fa-solid fa-circle-plus"></i>
+      <span>Log</span>
+      <span class="nav-badge hidden" id="nav-log-badge"></span>
+    </button>
+    <button class="nav-btn" data-page="insights" aria-label="Insights">
+      <i class="fa-solid fa-chart-bar"></i>
+      <span>Insights</span>
+    </button>
+    <button class="nav-btn" data-page="settings" aria-label="Settings">
+      <i class="fa-solid fa-sliders"></i>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
