@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#1e3a8a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Lead Launcher"/>
+<title>Lead Launcher - WA</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="llwa.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:...&family=Syne:wght@700;800&display=swap&v=1" rel="stylesheet"/>
+
+
+<style>
+  :root {
+    --navy: #1e3a8a;
+    --navy-light: #2563eb;
+    --charcoal: #1a1a2e;
+    --charcoal2: #16213e;
+    --accent: #3b82f6;
+    --success: #059669;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --bg: #f8f9fc;
+    --card: #ffffff;
+    --border: #e5e8f0;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    overscroll-behavior: none;
+  }
+
+  /* ─── Layout ─── */
+  #app { display: flex; flex-direction: column; height: 100%; height: 100dvh; }
+  #top-bar {
+    background: var(--charcoal);
+    padding: 12px 20px 10px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0; z-index: 10;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  #top-bar .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  #top-bar img { width: 32px; height: 32px; border-radius: 8px; }
+  #top-bar .app-name {
+    font-family: var(--font-display);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  #top-bar .app-name span { color: #60a5fa; }
+  #tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  #bottom-nav {
+    background: var(--charcoal);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 10px 4px 8px;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer; transition: color 0.2s, transform 0.15s;
+    border: none; background: none; outline: none;
+    -webkit-tap-highlight-color: transparent;
+    gap: 3px;
+  }
+  .nav-btn.active { color: #60a5fa; }
+  .nav-btn svg { width: 22px; height: 22px; transition: transform 0.2s; }
+  .nav-btn.active svg { transform: scale(1.1); }
+  .nav-btn span { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+  .nav-btn:active { transform: scale(0.92); }
+
+  /* ─── Tabs ─── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .section-scroll { padding: 16px 16px 100px; }
+
+  /* ─── Cards ─── */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 12px rgba(26,26,46,0.07);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:active { transform: scale(0.985); box-shadow: 0 1px 6px rgba(26,26,46,0.05); }
+
+  /* ─── Buttons ─── */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 13px 20px; font-family: var(--font-body);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 15px rgba(30,58,138,0.35);
+    width: 100%; display: block; text-align: center;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary:active { opacity: 0.88; transform: scale(0.97); box-shadow: 0 2px 8px rgba(30,58,138,0.2); }
+  .btn-secondary {
+    background: #f1f4f9; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 9px 16px; font-family: var(--font-body);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .btn-secondary:active { background: #e4e8f0; transform: scale(0.96); }
+  .btn-danger {
+    background: #fef2f2; color: var(--danger);
+    border: 1px solid #fecaca; border-radius: 10px;
+    padding: 10px 16px; font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .btn-danger:active { background: #fee2e2; transform: scale(0.96); }
+  .btn-warn {
+    background: #fffbeb; color: var(--warn);
+    border: 1px solid #fde68a; border-radius: 10px;
+    padding: 10px 16px; font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .btn-warn:active { background: #fef3c7; transform: scale(0.96); }
+
+  /* ─── Badges ─── */
+  .badge {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border-radius: 999px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .badge-sent { background: #d1fae5; color: #065f46; }
+  .badge-pending { background: #dbeafe; color: #1e40af; }
+  .badge-skipped { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+  .badge-invalid { background: #fee2e2; color: #991b1b; }
+
+  /* ─── Search bar ─── */
+  .search-wrap {
+    position: relative; margin-bottom: 14px;
+  }
+  .search-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; color: var(--muted); pointer-events: none;
+  }
+  .search-input {
+    width: 100%; padding: 11px 14px 11px 36px;
+    border: 1px solid var(--border); border-radius: 12px;
+    font-family: var(--font-body); font-size: 14px;
+    background: #fff; color: var(--text);
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+
+  /* ─── Leads sub-tabs ─── */
+  #leads-subtab-bar {
+    background: #fff;
+    padding: 12px 16px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 4px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .subtab-btn {
+    flex: 1; padding: 8px 4px; border: none; background: none;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .subtab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+  #leads-progress-bar {
+    background: #fff;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    display: flex; gap: 12px; flex-wrap: wrap;
+    position: sticky; top: 44px; z-index: 4;
+  }
+  #leads-progress-bar span { font-weight: 600; color: var(--text); }
+  .subtab-panel { display: none; padding: 14px 16px 100px; }
+  .subtab-panel.active { display: block; }
+
+  /* ─── Home progress ring ─── */
+  .ring-wrap {
+    display: flex; align-items: center; justify-content: center;
+    margin: 8px 0 16px;
+  }
+  .ring-container { position: relative; width: 160px; height: 160px; }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-track { fill: none; stroke: #e5e8f0; stroke-width: 12; }
+  .ring-progress {
+    fill: none; stroke: url(#ringGradient);
+    stroke-width: 12; stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-count { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--charcoal); line-height: 1; }
+  .ring-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 3px; }
+
+  /* ─── Streak chip ─── */
+  .streak-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #fff7ed, #fef3c7);
+    border: 1px solid #fde68a; border-radius: 999px;
+    padding: 6px 14px; font-size: 14px; font-weight: 700;
+    color: #92400e;
+  }
+  .streak-chip .fire { font-size: 18px; }
+
+  /* ─── Upload area ─── */
+  #drop-zone {
+    border: 2px dashed var(--border); border-radius: 16px;
+    padding: 40px 24px; text-align: center;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    background: #fff;
+  }
+  #drop-zone.drag-over { border-color: var(--accent); background: #eff6ff; }
+  #drop-zone svg { width: 44px; height: 44px; color: var(--accent); margin: 0 auto 12px; display: block; }
+
+  /* ─── Stats cards ─── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card {
+    background: var(--card); border-radius: 16px;
+    padding: 18px 16px; border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(26,26,46,0.06);
+  }
+  .stat-value { font-family: var(--font-display); font-size: 34px; font-weight: 800; color: var(--charcoal); line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 5px; }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-card.accent { background: linear-gradient(135deg, var(--navy), var(--navy-light)); border: none; }
+  .stat-card.accent .stat-value, .stat-card.accent .stat-label { color: #fff; }
+  .stat-card.accent .stat-label { color: rgba(255,255,255,0.7); }
+
+  /* ─── Settings stepper ─── */
+  .stepper {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    background: #fff;
+  }
+  .stepper-btn {
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    background: #f8f9fc; border: none; cursor: pointer;
+    font-size: 22px; font-weight: 300; color: var(--navy);
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .stepper-btn:active { background: #e8ecf5; transform: scale(0.92); }
+  .stepper-val {
+    flex: 1; text-align: center; font-family: var(--font-display);
+    font-size: 22px; font-weight: 800; color: var(--charcoal);
+    background: #fff; border: none; outline: none;
+    pointer-events: none;
+  }
+
+  /* ─── Modals / Overlays ─── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(15,15,30,0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 0;
+    transition: opacity 0.25s;
+  }
+  .overlay.hidden { display: none; }
+  .modal-sheet {
+    background: #fff; border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 480px;
+    padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(0);
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: #e5e7eb; margin: 0 auto 20px;
+  }
+  .modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+  .modal-body { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+
+  /* ─── Onboarding ─── */
+  #onboarding {
+    position: fixed; inset: 0; z-index: 200;
+    background: linear-gradient(160deg, var(--charcoal) 0%, var(--charcoal2) 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding: 0 28px calc(48px + env(safe-area-inset-bottom));
+    transition: opacity 0.4s;
+  }
+  #onboarding.hidden { opacity: 0; pointer-events: none; }
+  .onboard-illustration {
+    position: absolute; top: 60px; left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px;
+  }
+  .onboard-illustration img { width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .onboard-illustration .glow {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(96,165,250,0.25) 0%, transparent 70%);
+    position: absolute; top: -20px;
+  }
+  .onboard-step { color: #fff; text-align: center; }
+  .onboard-step-number { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .onboard-step h2 { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin: 0 0 12px; color: #fff; line-height: 1.2; }
+  .onboard-step p { color: rgba(255,255,255,0.6); font-size: 15px; line-height: 1.6; margin: 0; }
+  .onboard-dots { display: flex; gap: 8px; justify-content: center; margin: 24px 0 28px; }
+  .onboard-dot { width: 8px; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.2); transition: background 0.3s, width 0.3s; }
+  .onboard-dot.active { background: #60a5fa; width: 24px; }
+
+  /* ─── Celebration overlay ─── */
+  #celebration {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  #celebration.hidden { opacity: 0; pointer-events: none; }
+  #celebration .cel-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(30,58,138,0.97) 0%, rgba(15,15,46,0.99) 100%);
+    animation: celBgIn 0.4s ease;
+  }
+  @keyframes celBgIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  #celebration .cel-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 32px;
+  }
+  .cel-emoji { font-size: 80px; animation: popIn 0.5s cubic-bezier(0.34, 1.8, 0.64, 1) 0.2s both; }
+  @keyframes popIn {
+    from { transform: scale(0) rotate(-20deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .cel-title {
+    font-family: var(--font-display); font-size: 42px; font-weight: 800;
+    color: #fff; line-height: 1; margin: 16px 0 8px;
+    animation: slideInUp 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) 0.4s both;
+  }
+  .cel-subtitle {
+    font-size: 16px; color: rgba(255,255,255,0.7);
+    animation: slideInUp 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) 0.55s both;
+  }
+  .cel-streak {
+    margin-top: 24px; background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px; padding: 8px 20px;
+    font-size: 15px; color: #fff; font-weight: 600;
+    animation: slideInUp 0.5s cubic-bezier(0.34, 1.5, 0.64, 1) 0.7s both;
+  }
+  @keyframes slideInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Confetti canvas */
+  #confetti-canvas { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+  /* ─── Toast ─── */
+  #toast-container {
+    position: fixed; top: calc(72px + env(safe-area-inset-top));
+    left: 50%; transform: translateX(-50%);
+    z-index: 500; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--charcoal); color: #fff;
+    padding: 10px 20px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.5, 0.64, 1);
+    white-space: nowrap;
+  }
+  @keyframes toastIn {
+    from { transform: translateY(-10px) scale(0.9); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* ─── Empty state ─── */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 24px; text-align: center; color: var(--muted);
+  }
+  .empty-state svg { width: 52px; height: 52px; margin-bottom: 16px; color: #d1d5db; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ─── Misc ─── */
+  .section-title {
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    margin: 20px 0 10px;
+  }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  input[type="text"], input[type="number"], input[type="file"] {
+    font-family: var(--font-body);
+  }
+  .input-field {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 12px; font-family: var(--font-body); font-size: 14px;
+    background: #fff; color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+  }
+  .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+
+  .lead-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 10px; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .lead-card:active { transform: scale(0.985); }
+  .lead-name { font-weight: 700; font-size: 15px; color: var(--charcoal); margin-bottom: 10px; }
+  .lead-actions { display: flex; gap: 8px; align-items: center; }
+  .lead-actions .btn-primary { flex: 1; padding: 11px 12px; font-size: 13px; }
+  .lead-actions .btn-secondary { flex-shrink: 0; padding: 9px 14px; font-size: 13px; }
+
+  /* Preview table */
+  .preview-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .preview-table th { background: #f1f4f9; color: var(--muted); font-weight: 600; padding: 8px 12px; text-align: left; }
+  .preview-table td { padding: 8px 12px; border-top: 1px solid var(--border); color: var(--text); }
+  .preview-table tr:first-child td { border-top: none; }
+
+  /* Smooth tab transitions */
+  .tab-panel { animation: fadeSlide 0.2s ease; }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Pulse ring for celebration */
+  .pulse-ring {
+    position: absolute; width: 200px; height: 200px; border-radius: 50%;
+    border: 2px solid rgba(96,165,250,0.4);
+    animation: pulseOut 1.5s ease-out infinite;
+  }
+  @keyframes pulseOut {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Top Bar -->
+  <div id="top-bar">
+    <div class="logo-wrap">
+      <img src="llwa.png" alt="Logo" onerror="this.style.display='none'"/>
+      <div class="app-name">Lead Launcher <span>· WA</span></div>
+    </div>
+    <div id="top-bar-right" style="font-size:12px;color:rgba(255,255,255,0.45);font-weight:600;letter-spacing:0.3px;"></div>
+  </div>
+
+  <!-- Tab Content -->
+  <div id="tab-content">
+
+    <!-- ── HOME ── -->
+    <div class="tab-panel active" id="tab-home">
+      <div class="section-scroll">
+        <!-- Streak -->
+        <div style="display:flex;justify-content:center;margin-bottom:16px;">
+          <div class="streak-chip">
+            <span class="fire">🔥</span>
+            <span id="home-streak">0 day streak</span>
+          </div>
+        </div>
+
+        <!-- Progress ring card -->
+        <div class="card" style="padding:20px 16px 16px;">
+          <div style="text-align:center;margin-bottom:4px;">
+            <span style="font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Today's Progress</span>
+          </div>
+          <div class="ring-wrap">
+            <div class="ring-container">
+              <svg class="ring-svg" viewBox="0 0 160 160" width="160" height="160">
+                <defs>
+                  <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#1e3a8a"/>
+                    <stop offset="100%" style="stop-color:#3b82f6"/>
+                  </linearGradient>
+                </defs>
+                <circle class="ring-track" cx="80" cy="80" r="68"/>
+                <circle class="ring-progress" id="ring-path" cx="80" cy="80" r="68"
+                  stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-count" id="ring-count">0</div>
+                <div class="ring-label" id="ring-label">of <span id="ring-target">25</span> sent</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:15px;font-weight:600;color:var(--charcoal);" id="home-motive">Let's get after it.</div>
+        </div>
+
+        <!-- Quick action -->
+        <div style="margin-top:4px;">
+          <button class="btn-primary" onclick="switchTab('leads')" style="font-size:15px;padding:15px 20px;">
+            🚀 Go to Leads
+          </button>
+        </div>
+
+        <!-- Quick stats strip -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;">
+          <div class="card" style="text-align:center;padding:14px 8px;margin-bottom:0;">
+            <div style="font-family:var(--font-display);font-size:22px;font-weight:800;" id="qs-pending">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Pending</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 8px;margin-bottom:0;">
+            <div style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--success);" id="qs-sent">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Sent</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 8px;margin-bottom:0;">
+            <div style="font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--danger);" id="qs-skipped">0</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Skipped</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEADS ── -->
+    <div class="tab-panel" id="tab-leads">
+      <div id="leads-subtab-bar">
+        <button class="subtab-btn active" onclick="switchSubtab('pending')">Pending</button>
+        <button class="subtab-btn" onclick="switchSubtab('sent')">Sent</button>
+        <button class="subtab-btn" onclick="switchSubtab('invalid')">Invalid / Skipped</button>
+      </div>
+      <div id="leads-progress-bar">
+        <div><span id="lp-pending">0</span> pending</div>
+        <div>·</div>
+        <div><span id="lp-sent">0</span> sent</div>
+        <div>·</div>
+        <div><span id="lp-skipped">0</span> skipped</div>
+        <div>·</div>
+        <div><span id="lp-invalid">0</span> invalid</div>
+      </div>
+
+      <!-- Pending -->
+      <div class="subtab-panel active" id="subtab-pending">
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input class="search-input" type="text" placeholder="Search pending leads…" oninput="renderPending(this.value)" id="search-pending"/>
+        </div>
+        <div id="pending-list"></div>
+      </div>
+
+      <!-- Sent -->
+      <div class="subtab-panel" id="subtab-sent">
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input class="search-input" type="text" placeholder="Search sent leads…" oninput="renderSent(this.value)" id="search-sent"/>
+        </div>
+        <div id="sent-list"></div>
+      </div>
+
+      <!-- Invalid/Skipped -->
+      <div class="subtab-panel" id="subtab-invalid">
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input class="search-input" type="text" placeholder="Search…" oninput="renderInvalid(this.value)" id="search-invalid"/>
+        </div>
+        <div id="invalid-list"></div>
+      </div>
+    </div>
+
+    <!-- ── UPLOAD ── -->
+    <div class="tab-panel" id="tab-upload">
+      <div class="section-scroll">
+        <div class="section-title">Import Leads</div>
+        <div id="drop-zone" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <div style="font-weight:700;font-size:15px;color:var(--charcoal);margin-bottom:6px;">Tap to upload CSV</div>
+          <div style="font-size:13px;color:var(--muted);">Must contain <strong>name</strong> and <strong>phone</strong> columns</div>
+        </div>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSVFile(this.files[0])"/>
+
+        <!-- Preview -->
+        <div id="upload-preview" style="display:none;margin-top:16px;">
+          <div class="section-title">Preview (first 5 rows)</div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table class="preview-table" id="preview-table"></table>
+          </div>
+          <div style="margin-top:4px;font-size:13px;color:var(--muted);" id="preview-total"></div>
+          <div id="preview-actions" style="margin-top:12px;display:flex;gap:10px;">
+            <button class="btn-primary" onclick="confirmImport()" style="flex:1;">Confirm Import</button>
+            <button class="btn-secondary" onclick="cancelImport()">Cancel</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-title">Manage Data</div>
+
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn-warn" onclick="showResetProgress()">↺ Reset Progress</button>
+          <div style="font-size:12px;color:var(--muted);">Restores all leads to Pending, resets today's count. Keeps lead list.</div>
+        </div>
+
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;margin-top:0;">
+          <button class="btn-danger" onclick="showClearList()">🗑 Clear Lead List</button>
+          <div style="font-size:12px;color:var(--muted);">Permanently removes all leads and progress data.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div class="tab-panel" id="tab-stats">
+      <div class="section-scroll">
+        <div class="section-title">Outreach Stats</div>
+        <div class="stat-grid">
+          <div class="stat-card accent full">
+            <div class="stat-label">All-Time Sent</div>
+            <div class="stat-value" id="st-alltime">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Today</div>
+            <div class="stat-value" id="st-today">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">This Week</div>
+            <div class="stat-value" id="st-week">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">🔥 Current Streak</div>
+            <div class="stat-value" id="st-streak">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">🏆 Longest Streak</div>
+            <div class="stat-value" id="st-longest">0</div>
+          </div>
+          <div class="stat-card full">
+            <div class="stat-label">Leads Breakdown</div>
+            <div style="display:flex;gap:20px;margin-top:8px;flex-wrap:wrap;">
+              <div><div style="font-family:var(--font-display);font-size:24px;font-weight:800;" id="st-pending">0</div><div style="font-size:12px;color:var(--muted);">Pending</div></div>
+              <div><div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--success);" id="st-sent2">0</div><div style="font-size:12px;color:var(--muted);">Sent</div></div>
+              <div><div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--muted);" id="st-skipped2">0</div><div style="font-size:12px;color:var(--muted);">Skipped</div></div>
+              <div><div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--danger);" id="st-invalid2">0</div><div style="font-size:12px;color:var(--muted);">Invalid</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="section-scroll">
+        <div class="section-title">Daily Goal</div>
+        <div class="card">
+          <div style="font-weight:600;font-size:14px;margin-bottom:14px;">Daily Target</div>
+          <div class="stepper">
+            <button class="stepper-btn" onclick="adjustTarget(-1)">−</button>
+            <div class="stepper-val" id="target-display">25</div>
+            <button class="stepper-btn" onclick="adjustTarget(1)">+</button>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:10px;">Messages to send per day to hit your streak</div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-title">Danger Zone</div>
+        <div class="card">
+          <div style="font-weight:600;font-size:14px;margin-bottom:8px;">Reset All Data</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Clears everything — leads, stats, streaks. App returns to default state.</div>
+          <button class="btn-danger" onclick="showResetAll()">⚠️ Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- /tab-content -->
+
+  <!-- Bottom Nav -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('home')" id="nav-home">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('leads')" id="nav-leads">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span>Leads</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('upload')" id="nav-upload">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+      <span>Upload</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('stats')" id="nav-stats">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('settings')" id="nav-settings">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+</div><!-- /app -->
+
+<!-- ── TOAST CONTAINER ── -->
+<div id="toast-container"></div>
+
+<!-- ── ONBOARDING ── -->
+<div id="onboarding">
+  <div class="onboard-illustration">
+    <div class="glow"></div>
+    <img src="llwa.png" alt="Logo" onerror="this.style.background='linear-gradient(135deg,#1e3a8a,#3b82f6)';this.style.display='block'"/>
+  </div>
+  <div class="onboard-step" id="onboard-step-content"></div>
+  <div class="onboard-dots" id="onboard-dots"></div>
+  <button class="btn-primary" id="onboard-next-btn" onclick="onboardNext()" style="width:100%;font-size:16px;padding:16px;"></button>
+</div>
+
+<!-- ── MODAL OVERLAYS ── -->
+<div class="overlay hidden" id="modal-overlay">
+  <div class="modal-sheet" id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div id="modal-actions" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+
+<!-- ── CELEBRATION ── -->
+<div id="celebration" class="hidden">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="cel-bg"></div>
+  <div class="cel-content">
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring" style="animation-delay:0.5s;"></div>
+      <div class="cel-emoji">🎯</div>
+    </div>
+    <div class="cel-title">Target Hit.</div>
+    <div class="cel-subtitle" id="cel-subtitle">You crushed today's goal.</div>
+    <div class="cel-streak" id="cel-streak">🔥 Day streak!</div>
+    <button onclick="closeCelebration()" style="margin-top:32px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:12px;padding:13px 36px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">Keep Going 🚀</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STORAGE HELPERS
+// ══════════════════════════════════════════════
+const LS = {
+  get: (k, def=null) => { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch { return def; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del: (k) => { try { localStorage.removeItem(k); } catch {} }
+};
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let state = {
+  leads: [],
+  dailySent: 0,
+  dailyDate: '',
+  allTimeSent: 0,
+  allTimeSkipped: 0,
+  allTimeInvalid: 0,
+  weekSent: {},        // { 'YYYY-WW': count }
+  currentStreak: 0,
+  longestStreak: 0,
+  lastStreakDate: '',
+  dailyTarget: 25,
+  celebrationShownDate: ''
+};
+
+function loadState() {
+  state.leads             = LS.get('leads', []);
+  state.dailySent         = LS.get('dailySent', 0);
+  state.dailyDate         = LS.get('dailyDate', '');
+  state.allTimeSent       = LS.get('allTimeSent', 0);
+  state.allTimeSkipped    = LS.get('allTimeSkipped', 0);
+  state.allTimeInvalid    = LS.get('allTimeInvalid', 0);
+  state.weekSent          = LS.get('weekSent', {});
+  state.currentStreak     = LS.get('currentStreak', 0);
+  state.longestStreak     = LS.get('longestStreak', 0);
+  state.lastStreakDate     = LS.get('lastStreakDate', '');
+  state.dailyTarget       = LS.get('dailyTarget', 25);
+  state.celebrationShownDate = LS.get('celebrationShownDate', '');
+}
+
+function saveState() {
+  LS.set('leads', state.leads);
+  LS.set('dailySent', state.dailySent);
+  LS.set('dailyDate', state.dailyDate);
+  LS.set('allTimeSent', state.allTimeSent);
+  LS.set('allTimeSkipped', state.allTimeSkipped);
+  LS.set('allTimeInvalid', state.allTimeInvalid);
+  LS.set('weekSent', state.weekSent);
+  LS.set('currentStreak', state.currentStreak);
+  LS.set('longestStreak', state.longestStreak);
+  LS.set('lastStreakDate', state.lastStreakDate);
+  LS.set('dailyTarget', state.dailyTarget);
+  LS.set('celebrationShownDate', state.celebrationShownDate);
+}
+
+// ══════════════════════════════════════════════
+//  DATE HELPERS
+// ══════════════════════════════════════════════
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function weekKey() {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const week = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return `${d.getFullYear()}-${String(week).padStart(2,'0')}`;
+}
+function checkDailyReset() {
+  const today = todayStr();
+  if (state.dailyDate !== today) {
+    state.dailySent = 0;
+    state.dailyDate = today;
+    saveState();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  GREETING
+// ══════════════════════════════════════════════
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 0 && h < 12) return 'Good morning';
+  if (h >= 12 && h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ══════════════════════════════════════════════
+//  PHONE FORMATTING
+// ══════════════════════════════════════════════
+function formatPhone(raw) {
+  let p = String(raw).replace(/[\s\-\(\)\+\.]/g, '').replace(/\D/g, '');
+  if (p.startsWith('0')) p = '234' + p.slice(1);
+  else if (p.length === 10) p = '234' + p;
+  else if (!p.startsWith('234')) p = '234' + p;
+  return p;
+}
+
+// ══════════════════════════════════════════════
+//  WA MESSAGE
+// ══════════════════════════════════════════════
+function buildMessage(name) {
+  const greeting = getGreeting();
+  return `${greeting} ${name},
+
+Quick one — and feel free to ignore if this isn't relevant.
+
+I recently came across your Google Business profile. Strong presence you have there.
+
+One thing though: I did not see a website linked. For many customers, that's the moment they hesitate.
+
+I built a demo website to show how a professional website for your business could look like.
+
+Want me to send it through?`;
+}
+
+function buildWALink(phone, name) {
+  const msg = buildMessage(name);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+
+// ══════════════════════════════════════════════
+//  LEADS GETTERS
+// ══════════════════════════════════════════════
+function pendingLeads()  { return state.leads.filter(l => l.status === 'pending'); }
+function sentLeads()     { return state.leads.filter(l => l.status === 'sent'); }
+function skippedLeads()  { return state.leads.filter(l => l.status === 'skipped'); }
+function invalidLeads()  { return state.leads.filter(l => l.status === 'invalid'); }
+
+// ══════════════════════════════════════════════
+//  LEAD ACTIONS
+// ══════════════════════════════════════════════
+function openWA(id) {
+  const lead = state.leads.find(l => l.id === id);
+  if (!lead) return;
+  const url = buildWALink(lead.phone, lead.name);
+  window.open(url, '_blank');
+  markSent(id);
+}
+
+function markSent(id) {
+  const lead = state.leads.find(l => l.id === id);
+  if (!lead || lead.status === 'sent') return;
+  const wasAlready = lead.status === 'sent';
+  lead.status = 'sent';
+  lead.sentAt = Date.now();
+
+  state.dailySent++;
+  state.allTimeSent++;
+  const wk = weekKey();
+  state.weekSent[wk] = (state.weekSent[wk] || 0) + 1;
+
+  saveState();
+  renderAll();
+  checkCelebration();
+}
+
+function markSkipped(id) {
+  const lead = state.leads.find(l => l.id === id);
+  if (!lead) return;
+  lead.status = 'skipped';
+  state.allTimeSkipped++;
+  saveState();
+  renderAll();
+  showToast('Lead skipped');
+}
+
+function markInvalid(id) {
+  const lead = state.leads.find(l => l.id === id);
+  if (!lead || lead.status !== 'sent') return;
+  lead.status = 'invalid';
+  state.allTimeInvalid++;
+  // decrement
+  state.dailySent = Math.max(0, state.dailySent - 1);
+  state.allTimeSent = Math.max(0, state.allTimeSent - 1);
+  const wk = weekKey();
+  state.weekSent[wk] = Math.max(0, (state.weekSent[wk] || 0) - 1);
+  saveState();
+  renderAll();
+  showToast('Marked as invalid');
+}
+
+// ══════════════════════════════════════════════
+//  STREAK
+// ══════════════════════════════════════════════
+function checkCelebration() {
+  const today = todayStr();
+  if (state.dailySent >= state.dailyTarget && state.celebrationShownDate !== today) {
+    // increment streak
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+    if (state.lastStreakDate === yStr || state.lastStreakDate === today) {
+      if (state.lastStreakDate !== today) state.currentStreak++;
+    } else {
+      state.currentStreak = 1;
+    }
+    state.lastStreakDate = today;
+    if (state.currentStreak > state.longestStreak) state.longestStreak = state.currentStreak;
+    state.celebrationShownDate = today;
+    saveState();
+    renderAll();
+    triggerCelebration();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+function renderAll() {
+  renderHome();
+  renderLeadsProgress();
+  renderPending();
+  renderSent();
+  renderInvalid();
+  renderStats();
+  renderSettings();
+}
+
+function renderHome() {
+  const sent = state.dailySent;
+  const target = state.dailyTarget;
+  document.getElementById('ring-count').textContent = sent;
+  document.getElementById('ring-target').textContent = target;
+
+  const circ = 2 * Math.PI * 68; // 427.26
+  const pct = Math.min(sent / target, 1);
+  const offset = circ - pct * circ;
+  document.getElementById('ring-path').style.strokeDashoffset = offset;
+
+  const pending = pendingLeads().length;
+  const sk = skippedLeads().length;
+  document.getElementById('qs-pending').textContent = pending;
+  document.getElementById('qs-sent').textContent = sentLeads().length;
+  document.getElementById('qs-skipped').textContent = sk;
+
+  const s = state.currentStreak;
+  document.getElementById('home-streak').textContent = `${s} day${s !== 1 ? 's' : ''} streak`;
+
+  let motive = 'Let\'s get after it.';
+  if (sent > 0 && sent < target) {
+    const left = target - sent;
+    motive = `${left} more to hit your target.`;
+  } else if (sent >= target) {
+    motive = 'Target crushed. Keep going. 💪';
+  }
+  document.getElementById('home-motive').textContent = motive;
+
+  // top-bar date
+  const d = new Date();
+  document.getElementById('top-bar-right').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function renderLeadsProgress() {
+  document.getElementById('lp-pending').textContent  = pendingLeads().length;
+  document.getElementById('lp-sent').textContent     = sentLeads().length;
+  document.getElementById('lp-skipped').textContent  = skippedLeads().length;
+  document.getElementById('lp-invalid').textContent  = invalidLeads().length;
+}
+
+function renderPending(q = '') {
+  q = (q || document.getElementById('search-pending').value || '').toLowerCase();
+  const list = pendingLeads().filter(l => l.name.toLowerCase().includes(q));
+  const el = document.getElementById('pending-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><p>${q ? 'No results found.' : state.leads.length ? 'All leads processed! 🎉' : 'Upload a CSV to get started.'}</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(l => `
+    <div class="lead-card">
+      <div class="lead-name">${escHtml(l.name)}</div>
+      <div class="lead-actions">
+        <button class="btn-primary" onclick="openWA('${l.id}')">
+          <span style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Open in WhatsApp
+          </span>
+        </button>
+        <button class="btn-secondary" onclick="markSkipped('${l.id}')">Skip</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderSent(q = '') {
+  q = (q || document.getElementById('search-sent').value || '').toLowerCase();
+  const list = sentLeads().filter(l => l.name.toLowerCase().includes(q));
+  const el = document.getElementById('sent-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>${q ? 'No results found.' : 'No sent leads yet.'}</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(l => `
+    <div class="lead-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="lead-name" style="margin-bottom:0;">${escHtml(l.name)}</div>
+        <span class="badge badge-sent">Sent</span>
+      </div>
+      <button class="btn-danger" style="width:auto;padding:8px 16px;font-size:13px;" onclick="markInvalid('${l.id}')">Mark as Invalid</button>
+    </div>`).join('');
+}
+
+function renderInvalid(q = '') {
+  q = (q || document.getElementById('search-invalid').value || '').toLowerCase();
+  const list = [...invalidLeads(), ...skippedLeads()].filter(l => l.name.toLowerCase().includes(q));
+  const el = document.getElementById('invalid-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg><p>${q ? 'No results found.' : 'Nothing here yet.'}</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(l => `
+    <div class="lead-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="lead-name" style="margin-bottom:0;">${escHtml(l.name)}</div>
+        <span class="badge ${l.status === 'skipped' ? 'badge-skipped' : 'badge-invalid'}">${l.status}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderStats() {
+  const wk = weekKey();
+  document.getElementById('st-today').textContent   = state.dailySent;
+  document.getElementById('st-week').textContent    = state.weekSent[wk] || 0;
+  document.getElementById('st-alltime').textContent = state.allTimeSent;
+  document.getElementById('st-streak').textContent  = state.currentStreak;
+  document.getElementById('st-longest').textContent = state.longestStreak;
+  document.getElementById('st-pending').textContent  = pendingLeads().length;
+  document.getElementById('st-sent2').textContent    = sentLeads().length;
+  document.getElementById('st-skipped2').textContent = skippedLeads().length;
+  document.getElementById('st-invalid2').textContent = invalidLeads().length;
+}
+
+function renderSettings() {
+  document.getElementById('target-display').textContent = state.dailyTarget;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════
+//  TAB NAVIGATION
+// ══════════════════════════════════════════════
+const tabMap = { home:'tab-home', leads:'tab-leads', upload:'tab-upload', stats:'tab-stats', settings:'tab-settings' };
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabMap[name]).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  // Reset scroll
+  document.getElementById('tab-content').scrollTop = 0;
+  // Refresh if needed
+  if (name === 'stats') renderStats();
+}
+
+// ══════════════════════════════════════════════
+//  LEADS SUB-TABS
+// ══════════════════════════════════════════════
+function switchSubtab(name) {
+  document.querySelectorAll('.subtab-btn').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
+  const map = { pending: 0, sent: 1, invalid: 2 };
+  document.querySelectorAll('.subtab-btn')[map[name]].classList.add('active');
+  document.getElementById('subtab-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════
+function adjustTarget(delta) {
+  state.dailyTarget = Math.max(1, Math.min(200, state.dailyTarget + delta));
+  saveState();
+  renderSettings();
+  renderHome();
+}
+
+// ══════════════════════════════════════════════
+//  CSV UPLOAD
+// ══════════════════════════════════════════════
+let pendingImportData = [];
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleCSVFile(file);
+}
+
+function handleCSVFile(file) {
+  if (!file) return;
+  Papa.parse(file, {
+    header: true, skipEmptyLines: true,
+    complete: (results) => {
+      const rows = results.data;
+      // Validate columns
+      const sample = rows[0] || {};
+      const keys = Object.keys(sample).map(k => k.toLowerCase().trim());
+      if (!keys.includes('name') || !keys.includes('phone')) {
+        showToast('CSV must have "name" and "phone" columns');
+        return;
+      }
+      // Normalise
+      const mapped = rows.map((r, i) => {
+        const rn = {};
+        Object.keys(r).forEach(k => rn[k.toLowerCase().trim()] = r[k]);
+        return {
+          id: `lead_${Date.now()}_${i}`,
+          name: (rn.name || '').trim(),
+          phone: formatPhone(rn.phone || ''),
+          status: 'pending'
+        };
+      }).filter(r => r.name && r.phone);
+
+      pendingImportData = mapped;
+      showPreview(mapped);
+    },
+    error: () => showToast('Failed to parse CSV')
+  });
+}
+
+function showPreview(data) {
+  const preview = data.slice(0, 5);
+  const thead = `<tr><th>Name</th><th>Phone</th></tr>`;
+  const tbody = preview.map(r => `<tr><td>${escHtml(r.name)}</td><td>${escHtml(r.phone)}</td></tr>`).join('');
+  document.getElementById('preview-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+  document.getElementById('preview-total').textContent = `${data.length} leads found`;
+  document.getElementById('upload-preview').style.display = 'block';
+}
+
+function confirmImport() {
+  if (state.leads.length > 0) {
+    showModal('Replace existing list?', `You have ${state.leads.length} existing leads. Importing will replace them.`, [
+      { label: 'Replace & Import', cls: 'btn-danger', action: 'doImport' },
+      { label: 'Cancel', cls: 'btn-secondary', action: 'closeModal' }
+    ]);
+  } else {
+    doImport();
+  }
+}
+
+function doImport() {
+  closeModal();
+  state.leads = pendingImportData;
+  pendingImportData = [];
+  cancelImport();
+  saveState();
+  renderAll();
+  showToast(`✅ ${state.leads.length} leads imported`);
+  switchTab('leads');
+}
+
+function cancelImport() {
+  document.getElementById('upload-preview').style.display = 'none';
+  document.getElementById('csv-file').value = '';
+  pendingImportData = [];
+}
+
+// ══════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════
+function showModal(title, body, buttons) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  const actionsEl = document.getElementById('modal-actions');
+  actionsEl.innerHTML = '';
+  buttons.forEach(btn => {
+    const b = document.createElement('button');
+    b.className = btn.cls;
+    b.textContent = btn.label;
+    b.onclick = () => { if (window[btn.action]) window[btn.action](); };
+    actionsEl.appendChild(b);
+  });
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ══════════════════════════════════════════════
+//  UPLOAD ACTIONS
+// ══════════════════════════════════════════════
+function showResetProgress() {
+  showModal('Reset Progress?', 'All leads will return to Pending status. Today\'s count resets. Your lead list stays intact.', [
+    { label: 'Reset Progress', cls: 'btn-warn', action: 'doResetProgress' },
+    { label: 'Cancel', cls: 'btn-secondary', action: 'closeModal' }
+  ]);
+}
+
+function doResetProgress() {
+  state.leads = state.leads.map(l => ({ ...l, status: 'pending' }));
+  state.dailySent = 0;
+  state.dailyDate = todayStr();
+  state.allTimeSent = 0;
+  state.allTimeSkipped = 0;
+  state.allTimeInvalid = 0;
+  state.weekSent = {};
+  state.celebrationShownDate = '';
+  saveState();
+  closeModal();
+  renderAll();
+  showToast('Progress reset');
+}
+
+function showClearList() {
+  showModal('Clear Lead List?', 'This will permanently delete all leads and reset all progress. This cannot be undone.', [
+    { label: 'Clear Everything', cls: 'btn-danger', action: 'doClearList' },
+    { label: 'Cancel', cls: 'btn-secondary', action: 'closeModal' }
+  ]);
+}
+
+function doClearList() {
+  state.leads = [];
+  state.dailySent = 0;
+  state.dailyDate = todayStr();
+  state.allTimeSent = 0;
+  state.allTimeSkipped = 0;
+  state.allTimeInvalid = 0;
+  state.weekSent = {};
+  state.celebrationShownDate = '';
+  saveState();
+  closeModal();
+  renderAll();
+  showToast('Lead list cleared');
+}
+
+// ══════════════════════════════════════════════
+//  RESET ALL (arithmetic challenge)
+// ══════════════════════════════════════════════
+let resetChallenge = { a: 0, b: 0 };
+
+function showResetAll() {
+  resetChallenge.a = Math.floor(Math.random() * 9) + 1;
+  resetChallenge.b = Math.floor(Math.random() * 9) + 1;
+  const body = `
+    <p style="margin-bottom:16px;">This will permanently erase all leads, stats, streaks, and settings.</p>
+    <p style="margin-bottom:10px;font-weight:600;">To confirm, solve: <strong>${resetChallenge.a} + ${resetChallenge.b} = ?</strong></p>
+    <input type="number" id="reset-math-input" class="input-field" placeholder="Your answer…" inputmode="numeric"/>
+  `;
+  showModal('⚠️ Reset All Data', body, [
+    { label: 'Confirm Reset', cls: 'btn-danger', action: 'doResetAll' },
+    { label: 'Cancel', cls: 'btn-secondary', action: 'closeModal' }
+  ]);
+}
+
+function doResetAll() {
+  const inp = document.getElementById('reset-math-input');
+  if (!inp) return;
+  const ans = parseInt(inp.value);
+  if (ans !== resetChallenge.a + resetChallenge.b) {
+    inp.style.borderColor = 'var(--danger)';
+    inp.style.boxShadow = '0 0 0 3px rgba(220,38,38,0.15)';
+    showToast('Wrong answer. Try again.');
+    return;
+  }
+  // Full reset
+  localStorage.clear();
+  loadState();
+  closeModal();
+  renderAll();
+  showToast('App reset to default state');
+}
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+function showToast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity 0.3s';
+    t.style.opacity = '0';
+    setTimeout(() => t.remove(), 300);
+  }, 2200);
+}
+
+// ══════════════════════════════════════════════
+//  CELEBRATION
+// ══════════════════════════════════════════════
+function triggerCelebration() {
+  document.getElementById('cel-subtitle').textContent = `You crushed your ${state.dailyTarget}-message target!`;
+  document.getElementById('cel-streak').textContent = `🔥 ${state.currentStreak} day streak!`;
+  const cel = document.getElementById('celebration');
+  cel.classList.remove('hidden');
+  startConfetti();
+  // Auto close after 8s
+  setTimeout(closeCelebration, 8000);
+}
+
+function closeCelebration() {
+  const cel = document.getElementById('celebration');
+  cel.style.opacity = '0';
+  setTimeout(() => {
+    cel.classList.add('hidden');
+    cel.style.opacity = '';
+    stopConfetti();
+  }, 500);
+}
+
+// Confetti
+let confettiAnim, confettiCtx, confettiPieces = [];
+
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  confettiCtx = canvas.getContext('2d');
+  const colors = ['#1e3a8a','#3b82f6','#60a5fa','#fbbf24','#34d399','#f472b6','#a78bfa','#ffffff'];
+  confettiPieces = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height - canvas.height,
+    r: Math.random() * 6 + 3,
+    d: Math.random() * 120 + 20,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    tilt: Math.random() * 10 - 10,
+    tiltAngle: 0,
+    tiltAngleDelta: (Math.random() * 0.1 + 0.04) * (Math.random() > 0.5 ? 1 : -1),
+    vx: Math.random() * 2 - 1,
+    vy: Math.random() * 3 + 2
+  }));
+
+  function drawConfetti() {
+    const c = canvas;
+    confettiCtx.clearRect(0, 0, c.width, c.height);
+    confettiPieces.forEach(p => {
+      confettiCtx.save();
+      confettiCtx.beginPath();
+      confettiCtx.translate(p.x + p.tilt, p.y);
+      confettiCtx.rotate(p.tiltAngle * Math.PI / 180);
+      confettiCtx.fillStyle = p.color;
+      if (Math.random() > 0.5) {
+        confettiCtx.fillRect(-p.r/2, -p.r/2, p.r, p.r * 2);
+      } else {
+        confettiCtx.arc(0, 0, p.r, 0, 2 * Math.PI);
+        confettiCtx.fill();
+      }
+      confettiCtx.restore();
+      p.tiltAngle += p.tiltAngleDelta;
+      p.x += p.vx + Math.sin(p.d) * 0.5;
+      p.y += p.vy;
+      if (p.y > c.height) {
+        p.x = Math.random() * c.width;
+        p.y = -10;
+      }
+    });
+    confettiAnim = requestAnimationFrame(drawConfetti);
+  }
+  drawConfetti();
+}
+
+function stopConfetti() {
+  if (confettiAnim) cancelAnimationFrame(confettiAnim);
+  const canvas = document.getElementById('confetti-canvas');
+  if (confettiCtx) confettiCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ══════════════════════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════════════════════
+const onboardSteps = [
+  {
+    num: 'Step 1 of 3',
+    title: 'Welcome to Lead Launcher',
+    desc: 'Your daily outreach companion for WhatsApp. Simple, fast, and streak-driven.'
+  },
+  {
+    num: 'Step 2 of 3',
+    title: 'Upload your CSV',
+    desc: 'Your file needs two columns: name and phone. Drop it in the Upload tab and you\'re good to go.'
+  },
+  {
+    num: 'Step 3 of 3',
+    title: 'Set your target & launch',
+    desc: 'Hit your daily goal, build your streak. One tap sends the message. Let\'s go.'
+  }
+];
+let onboardStep = 0;
+
+function renderOnboard() {
+  const s = onboardSteps[onboardStep];
+  document.getElementById('onboard-step-content').innerHTML = `
+    <div class="onboard-step-number">${s.num}</div>
+    <h2>${s.title}</h2>
+    <p>${s.desc}</p>
+  `;
+  const dots = document.getElementById('onboard-dots');
+  dots.innerHTML = onboardSteps.map((_,i) => `<div class="onboard-dot ${i===onboardStep?'active':''}"></div>`).join('');
+  const btn = document.getElementById('onboard-next-btn');
+  btn.textContent = onboardStep < onboardSteps.length - 1 ? 'Next →' : 'Get Started';
+}
+
+function onboardNext() {
+  if (onboardStep < onboardSteps.length - 1) {
+    onboardStep++;
+    renderOnboard();
+  } else {
+    LS.set('onboarded', true);
+    const ob = document.getElementById('onboarding');
+    ob.style.opacity = '0';
+    ob.style.transition = 'opacity 0.4s';
+    setTimeout(() => ob.classList.add('hidden'), 400);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init() {
+  loadState();
+  checkDailyReset();
+  renderAll();
+
+  // Onboarding
+  if (!LS.get('onboarded')) {
+    renderOnboard();
+  } else {
+    document.getElementById('onboarding').classList.add('hidden');
+  }
+
+  // SW
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  // Auto midnight reset
+  const now = new Date();
+  const msToMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1) - now;
+  setTimeout(() => {
+    checkDailyReset();
+    renderAll();
+    setInterval(() => { checkDailyReset(); renderAll(); }, 86400000);
+  }, msToMidnight);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

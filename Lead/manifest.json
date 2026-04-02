@@ -1,0 +1,24 @@
+{
+  "name": "Lead Launcher - WA",
+  "short_name": "Lead Launcher",
+  "description": "WhatsApp lead outreach tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e3a8a",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "llwa.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "llwa.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
